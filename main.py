@@ -217,7 +217,7 @@ async def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit and player_cards[0].value == player_cards[1].value: # split
                     first_hit = False
-                if event.key == pygame.K_d and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit: # double
+                if event.key == pygame.K_d and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit and bet_amount*2 <= money: # double
                     first_hit = False
                     bet_amount *= 2
                     await hit(cards, player_cards, dealer_cards)
