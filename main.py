@@ -26,13 +26,13 @@ class Card:
         self.flipped = flipped
 
 
-def start_new_round(cards: list[Card], player_cards: list[Card], dealer_cards: list[Card]):
+async def start_new_round(cards: list[Card], player_cards: list[Card], dealer_cards: list[Card]):
     player_cards.clear()
     dealer_cards.clear()
-    hit(cards, player_cards, dealer_cards)
-    hit(cards, player_cards, dealer_cards)
-    hit_dealer(cards, player_cards, dealer_cards)
-    hit_dealer(cards, player_cards, dealer_cards)
+    await hit(cards, player_cards, dealer_cards)
+    await hit(cards, player_cards, dealer_cards)
+    await hit_dealer(cards, player_cards, dealer_cards)
+    await hit_dealer(cards, player_cards, dealer_cards)
     dealer_cards[1].flipped = True
 
 def check_blackjacks(player_cards: list[Card], dealer_cards: list[Card]):
@@ -174,7 +174,7 @@ async def main():
                         player_score = ''
                         dealer_score = ''
                         betting = False
-                        start_new_round(cards, player_cards, dealer_cards)
+                        await start_new_round(cards, player_cards, dealer_cards)
                         blackjacks = check_blackjacks(player_cards, dealer_cards)
                         if blackjacks[0] and blackjacks[1]: # PUSH
                             flip_dealer_card(cards, player_cards, dealer_cards)
@@ -220,7 +220,7 @@ async def main():
                 if event.key == pygame.K_d and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit: # double
                     first_hit = False
                     bet_amount *= 2
-                    hit(cards, player_cards, dealer_cards)
+                    await hit(cards, player_cards, dealer_cards)
                     player_score = calc_score(player_cards)
                     if player_score == 'Bust':
                         flip_dealer_card(cards, player_cards, dealer_cards)
@@ -234,7 +234,7 @@ async def main():
                         await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                         time.sleep(.25)
                         while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
-                            hit_dealer(cards, player_cards, dealer_cards)
+                            await hit_dealer(cards, player_cards, dealer_cards)
                             dealer_score = calc_score(dealer_cards)
                             await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                             time.sleep(.25)
@@ -259,7 +259,7 @@ async def main():
                             betting = True
                 if event.key == pygame.K_SPACE and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '':
                     first_hit = False
-                    hit(cards, player_cards, dealer_cards)
+                    await hit(cards, player_cards, dealer_cards)
                     player_score = calc_score(player_cards)
                     if player_score == 'Bust':
                         flip_dealer_card(cards, player_cards, dealer_cards)
@@ -273,7 +273,7 @@ async def main():
                     await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                     time.sleep(.25)
                     while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
-                        hit_dealer(cards, player_cards, dealer_cards)
+                        await hit_dealer(cards, player_cards, dealer_cards)
                         dealer_score = calc_score(dealer_cards)
                         await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                         time.sleep(.25)
