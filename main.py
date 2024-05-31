@@ -108,10 +108,13 @@ async def draw(screen, clock, player_cards, dealer_cards, player_score, dealer_s
     clock.tick(15)
     await asyncio.sleep(0)
 
-def new_game(cards):
-    print('Shuffling...')
+async def new_game(cards, screen, clock):
+    screen.fill((0, 155, 0))
+    screen.blit(font.render("Shuffling...", True, BLACK), (5, 5))
+    pygame.display.flip()
+    await asyncio.sleep(0)
     global back_card
-    for x in range(4):
+    for _ in range(4):
         for file in os.listdir('./Assets'):
             img = pygame.image.load(os.path.join('./Assets', file))
             img = pygame.transform.scale(img, (100, 150))
@@ -152,7 +155,7 @@ async def main():
     player_score =  ''
     dealer_score = ''
     result_text = ''
-    new_game(cards)
+    new_game(cards, screen, clock)
     money = 300
     bet_amount = 0
     betting = True
