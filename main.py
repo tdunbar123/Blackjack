@@ -144,7 +144,8 @@ def new_game(cards):
 async def main():
     cards = []
     global back_card
-
+    seed = int(time.time())
+    random.seed(seed)
     clock = pygame.time.Clock()
     dealer_cards = []
     player_cards = []
