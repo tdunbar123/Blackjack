@@ -50,7 +50,7 @@ def hit(cards, player_cards, dealer_cards):
     try:
         player_cards.append(cards.pop())
     except:
-        new_game(cards)
+        new_game(cards, screen)
         remove_duplicates(cards, player_cards, dealer_cards)
         player_cards.append(cards.pop())
 
@@ -58,7 +58,7 @@ def hit_dealer(cards, player_cards, dealer_cards):
     try:
         dealer_cards.append(cards.pop())
     except:
-        new_game(cards)
+        new_game(cards, screen)
         remove_duplicates(cards, player_cards, dealer_cards)
         dealer_cards.append(cards.pop())
 
@@ -108,11 +108,10 @@ async def draw(screen, clock, player_cards, dealer_cards, player_score, dealer_s
     clock.tick(15)
     await asyncio.sleep(0)
 
-async def new_game(cards, screen, clock):
+def new_game(cards, screen):
     screen.fill((0, 155, 0))
     screen.blit(font.render("Shuffling...", True, BLACK), (5, 5))
     pygame.display.flip()
-    await asyncio.sleep(0)
     global back_card
     for _ in range(4):
         for file in os.listdir('./Assets'):
@@ -155,7 +154,7 @@ async def main():
     player_score =  ''
     dealer_score = ''
     result_text = ''
-    new_game(cards, screen, clock)
+    new_game(cards, screen)
     money = 300
     bet_amount = 0
     betting = True
