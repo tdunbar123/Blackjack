@@ -3,6 +3,7 @@ import os
 import sys
 import pygame
 import time
+import asyncio
     
 
 pygame.init()
@@ -14,6 +15,8 @@ screen = pygame.display.set_mode((HEIGHT, WIDTH))
 
 font = pygame.font.Font(None, 36)
 BLACK = (0,0,0)
+
+starting_card_display_width = WIDTH/2
 
 class Card:
     def __init__(self, image, value, suit, flipped=False):
@@ -78,7 +81,7 @@ def remove_duplicates(cards, player_cards, dealer_cards):
         if card in player_cards or card in dealer_cards:
             cards.remove(card)
 
-def draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money):
+async def draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money):
     screen.fill((0, 155, 0))
     dealer_offset = starting_card_display_width - 25 - (len(dealer_cards))*50
     player_offset = starting_card_display_width - 25 - (len(player_cards))*50
@@ -103,6 +106,7 @@ def draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, 
     screen.blit(money_text, (100, 450))
     pygame.display.flip()
     clock.tick(15)
+    await asyncio.sleep(0)
 
 def new_game(cards):
     print('Shuffling...')
@@ -136,101 +140,138 @@ def new_game(cards):
             cards.append(card)
     random.shuffle(cards)
 
-cards = []
-global back_card
 
-clock = pygame.time.Clock()
-dealer_cards = []
-player_cards = []
-starting_card_display_width = WIDTH/2
-player_score =  ''
-dealer_score = ''
-result_text = ''
-new_game(cards)
-money = 0
-with open('running_total.txt', 'r') as f:
-    money = int(f.read())
-    f.close()
-bet_amount = 0
-betting = True
-first_hit = True
-running = True
-while running:
-    while betting:
-        first_hit = True
-        bet_change = 0
+async def main():
+    cards = []
+    global back_card
+
+    clock = pygame.time.Clock()
+    dealer_cards = []
+    player_cards = []
+    player_score =  ''
+    dealer_score = ''
+    result_text = ''
+    new_game(cards)
+    money = 300
+    bet_amount = 0
+    betting = True
+    first_hit = True
+    running = True
+    while running:
+        while betting:
+            first_hit = True
+            bet_change = 0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    betting = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        player_score = ''
+                        dealer_score = ''
+                        betting = False
+                        start_new_round(cards, player_cards, dealer_cards)
+                        blackjacks = check_blackjacks(player_cards, dealer_cards)
+                        if blackjacks[0] and blackjacks[1]: # PUSH
+                            flip_dealer_card(cards, player_cards, dealer_cards)
+                            result_text = 'Push'
+                            player_score = '21'
+                            dealer_score = '21'
+                            bet_amount = 0
+                            betting = True
+                            break
+                        elif blackjacks[0]: # Player blackjack
+                            flip_dealer_card(cards, player_cards, dealer_cards)
+                            result_text = 'Blackjack you win!'
+                            money += int(bet_amount*1.5)
+                            bet_amount = 0
+                            betting = True
+                            player_score = '21'
+                            dealer_score = calc_score(dealer_cards)
+                            break
+                        elif blackjacks[1]: # Dealer blackjack
+                            flip_dealer_card(cards, player_cards, dealer_cards)
+                            result_text = 'Dealer blackjack you lose'
+                            money -= bet_amount
+                            bet_amount = 0
+                            betting = True
+                            player_score = calc_score(player_cards)
+                            dealer_score = '21'
+                            break
+                        result_text = ''
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_DOWN] and bet_amount >= 5:
+                bet_amount -= 5  # Move left
+            if keys[pygame.K_UP] and bet_amount <= money-5:
+                bet_amount += 5  # Move right
+            bet_amount += bet_change
+            await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                betting = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    player_score = ''
-                    dealer_score = ''
-                    betting = False
-                    start_new_round(cards, player_cards, dealer_cards)
-                    blackjacks = check_blackjacks(player_cards, dealer_cards)
-                    if blackjacks[0] and blackjacks[1]: # PUSH
+                if event.key == pygame.K_s and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit and player_cards[0].value == player_cards[1].value: # split
+                    first_hit = False
+                if event.key == pygame.K_d and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit: # double
+                    first_hit = False
+                    bet_amount *= 2
+                    hit(cards, player_cards, dealer_cards)
+                    player_score = calc_score(player_cards)
+                    if player_score == 'Bust':
                         flip_dealer_card(cards, player_cards, dealer_cards)
-                        result_text = 'Push'
-                        player_score = '21'
-                        dealer_score = '21'
-                        bet_amount = 0
-                        betting = True
-                        break
-                    elif blackjacks[0]: # Player blackjack
-                        flip_dealer_card(cards, player_cards, dealer_cards)
-                        result_text = 'Blackjack you win!'
-                        money += int(bet_amount*1.5)
-                        bet_amount = 0
-                        betting = True
-                        player_score = '21'
-                        dealer_score = calc_score(dealer_cards)
-                        break
-                    elif blackjacks[1]: # Dealer blackjack
-                        flip_dealer_card(cards, player_cards, dealer_cards)
-                        result_text = 'Dealer blackjack you lose'
                         money -= bet_amount
                         bet_amount = 0
+                        result_text = 'You Lose'
                         betting = True
-                        player_score = calc_score(player_cards)
-                        dealer_score = '21'
-                        break
-                    result_text = ''
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_DOWN] and bet_amount >= 5:
-            bet_amount -= 5  # Move left
-        if keys[pygame.K_UP] and bet_amount <= money-5:
-            bet_amount += 5  # Move right
-        bet_amount += bet_change
-        draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit and player_cards[0].value == player_cards[1].value: # split
-                first_hit = False
-            if event.key == pygame.K_d and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '' and first_hit: # double
-                first_hit = False
-                bet_amount *= 2
-                hit(cards, player_cards, dealer_cards)
-                player_score = calc_score(player_cards)
-                if player_score == 'Bust':
-                    flip_dealer_card(cards, player_cards, dealer_cards)
-                    money -= bet_amount
-                    bet_amount = 0
-                    result_text = 'You Lose'
-                    betting = True
-                else:
+                    else:
+                        flip_dealer_card(cards, player_cards, dealer_cards)
+                        dealer_score = calc_score(dealer_cards)
+                        await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+                        time.sleep(.25)
+                        while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
+                            hit_dealer(cards, player_cards, dealer_cards)
+                            dealer_score = calc_score(dealer_cards)
+                            await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+                            time.sleep(.25)
+                        if dealer_score == 'Bust':
+                            money += bet_amount
+                            bet_amount = 0
+                            result_text = 'You Win!'
+                            betting = True
+                        elif int(dealer_score) == int(player_score):
+                            result_text = 'Push'
+                            bet_amount = 0
+                            betting = True
+                        elif int(dealer_score) > int(player_score):
+                            money -= bet_amount
+                            bet_amount = 0
+                            result_text = 'You Lose'
+                            betting = True
+                        else:
+                            money += bet_amount
+                            bet_amount = 0
+                            result_text = 'You Win!'
+                            betting = True
+                if event.key == pygame.K_SPACE and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '':
+                    first_hit = False
+                    hit(cards, player_cards, dealer_cards)
+                    player_score = calc_score(player_cards)
+                    if player_score == 'Bust':
+                        flip_dealer_card(cards, player_cards, dealer_cards)
+                        money -= bet_amount
+                        bet_amount = 0
+                        result_text = 'You Lose'
+                        betting = True
+                if event.key == pygame.K_RSHIFT and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '':
                     flip_dealer_card(cards, player_cards, dealer_cards)
                     dealer_score = calc_score(dealer_cards)
-                    draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+                    await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                     time.sleep(.25)
                     while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
                         hit_dealer(cards, player_cards, dealer_cards)
                         dealer_score = calc_score(dealer_cards)
-                        draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+                        await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
                         time.sleep(.25)
                     if dealer_score == 'Bust':
                         money += bet_amount
@@ -251,50 +292,10 @@ while running:
                         bet_amount = 0
                         result_text = 'You Win!'
                         betting = True
-            if event.key == pygame.K_SPACE and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '':
-                first_hit = False
-                hit(cards, player_cards, dealer_cards)
-                player_score = calc_score(player_cards)
-                if player_score == 'Bust':
-                    flip_dealer_card(cards, player_cards, dealer_cards)
-                    money -= bet_amount
-                    bet_amount = 0
-                    result_text = 'You Lose'
-                    betting = True
-            if event.key == pygame.K_RSHIFT and player_score != 'Bust' and dealer_score != 'Bust' and result_text == '':
-                flip_dealer_card(cards, player_cards, dealer_cards)
-                dealer_score = calc_score(dealer_cards)
-                draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                time.sleep(.25)
-                while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
-                    hit_dealer(cards, player_cards, dealer_cards)
-                    dealer_score = calc_score(dealer_cards)
-                    draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                    time.sleep(.25)
-                if dealer_score == 'Bust':
-                    money += bet_amount
-                    bet_amount = 0
-                    result_text = 'You Win!'
-                    betting = True
-                elif int(dealer_score) == int(player_score):
-                    result_text = 'Push'
-                    bet_amount = 0
-                    betting = True
-                elif int(dealer_score) > int(player_score):
-                    money -= bet_amount
-                    bet_amount = 0
-                    result_text = 'You Lose'
-                    betting = True
-                else:
-                    money += bet_amount
-                    bet_amount = 0
-                    result_text = 'You Win!'
-                    betting = True
-    dealer_score = calc_score(dealer_cards)
-    player_score = calc_score(player_cards)
-    draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-with open('running_total.txt', 'w') as f:
-    f.write(str(money))
-    f.close()
-pygame.quit()
-sys.exit()
+        dealer_score = calc_score(dealer_cards)
+        player_score = calc_score(player_cards)
+        await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
+    pygame.quit()
+    sys.exit()
+
+asyncio.run(main())
