@@ -9,7 +9,7 @@ import asyncio
 pygame.init()
 pygame.mixer.init()
 
-DEAL_SFX = pygame.mixer.Sound(os.path.join(r'./Assets/Sounds', 'deal_sfx_a.ogg'))
+DEAL_SFX = pygame.mixer.Sound(r'./Assets/Sounds/deal_sfx_a.wav')
 
 HEIGHT = 800
 WIDTH = 800
@@ -33,9 +33,13 @@ async def start_new_round(cards: list[Card], player_cards: list[Card], dealer_ca
     player_cards.clear()
     dealer_cards.clear()
     await hit(cards, player_cards, dealer_cards)
+    await asyncio.sleep(.25)
     await hit(cards, player_cards, dealer_cards)
+    await asyncio.sleep(.25)
     await hit_dealer(cards, player_cards, dealer_cards)
+    await asyncio.sleep(.25)
     await hit_dealer(cards, player_cards, dealer_cards)
+    await asyncio.sleep(.25)
     dealer_cards[1].flipped = True
 
 def check_blackjacks(player_cards: list[Card], dealer_cards: list[Card]):
@@ -237,12 +241,12 @@ async def main():
                         flip_dealer_card(cards, player_cards, dealer_cards)
                         dealer_score = calc_score(dealer_cards)
                         await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                        time.sleep(.25)
+                        await asyncio.sleep(.25)
                         while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
                             await hit_dealer(cards, player_cards, dealer_cards)
                             dealer_score = calc_score(dealer_cards)
                             await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                            time.sleep(.25)
+                            await asyncio.sleep(.25)
                         if dealer_score == 'Bust':
                             money += bet_amount
                             bet_amount = 0
@@ -276,12 +280,12 @@ async def main():
                     flip_dealer_card(cards, player_cards, dealer_cards)
                     dealer_score = calc_score(dealer_cards)
                     await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                    time.sleep(.25)
+                    await asyncio.sleep(.25)
                     while dealer_score != '17' and dealer_score != '18' and dealer_score != '19' and dealer_score != '20' and dealer_score != '21' and dealer_score != 'Bust':
                         await hit_dealer(cards, player_cards, dealer_cards)
                         dealer_score = calc_score(dealer_cards)
                         await draw(screen, clock, player_cards, dealer_cards, player_score, dealer_score, result_text, bet_amount, money)
-                        time.sleep(.25)
+                        await asyncio.sleep(.25)
                     if dealer_score == 'Bust':
                         money += bet_amount
                         bet_amount = 0
