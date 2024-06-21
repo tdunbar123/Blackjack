@@ -9,7 +9,7 @@ import asyncio
 pygame.init()
 pygame.mixer.init()
 
-DEAL_SFX = pygame.mixer.Sound(os.path.join(r'./Assets/Sounds', 'deal_sfx_a.mp3'))
+DEAL_SFX = pygame.mixer.Sound(os.path.join(r'./Assets/Sounds', 'deal_sfx_a.ogg'))
 
 HEIGHT = 800
 WIDTH = 800
