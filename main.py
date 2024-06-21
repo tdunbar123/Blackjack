@@ -7,6 +7,9 @@ import asyncio
     
 
 pygame.init()
+pygame.mixer.init()
+
+DEAL_SFX = pygame.mixer.Sound(os.path.join(r'./Assets/Sounds', 'deal_sfx_a.mp3'))
 
 HEIGHT = 800
 WIDTH = 800
@@ -53,6 +56,7 @@ async def hit(cards, player_cards, dealer_cards):
         await new_game(cards, screen)
         remove_duplicates(cards, player_cards, dealer_cards)
         player_cards.append(cards.pop())
+    DEAL_SFX.play()
 
 async def hit_dealer(cards, player_cards, dealer_cards):
     try:
@@ -61,6 +65,7 @@ async def hit_dealer(cards, player_cards, dealer_cards):
         await new_game(cards, screen)
         remove_duplicates(cards, player_cards, dealer_cards)
         dealer_cards.append(cards.pop())
+    DEAL_SFX.play()
 
 def flip_dealer_card(cards, player_cards, dealer_cards: list[Card]):
     dealer_cards[1].flipped = False
@@ -115,8 +120,8 @@ async def new_game(cards, screen):
     await asyncio.sleep(0)
     global back_card
     for _ in range(4):
-        for file in os.listdir('./Assets'):
-            img = pygame.image.load(os.path.join('./Assets', file))
+        for file in os.listdir('./Assets/Cards'):
+            img = pygame.image.load(os.path.join('./Assets/Cards', file))
             img = pygame.transform.scale(img, (100, 150))
             important_stuff = file.split('.')[0]
             value = important_stuff[0]
